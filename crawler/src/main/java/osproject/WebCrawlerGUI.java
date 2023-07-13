@@ -35,7 +35,7 @@ public class WebCrawlerGUI extends JFrame {
 
         startButton = new JButton("Start");
         stopButton = new JButton("Stop");
-        urlTextField = new JTextField("http://example.com");
+        urlTextField = new JTextField("http://google.com");
         outputTextArea = new JTextArea();
 
         JPanel inputPanel = new JPanel();
