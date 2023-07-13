@@ -34,3 +34,6 @@ Feel free to add update notes here. Add the date and your name so we know who's 
     That should prompt a GUI to appear with a text field for you to put the starting URL. It must start with the
     full URL (example: "http://google.com" instead of just "google.com"). Then use the start and stop buttons to 
     resume and pause this process.
+
+    I suggest creating a new branch or using the "prototype" branch to make changes and test them and then later 
+    merging to main. 
