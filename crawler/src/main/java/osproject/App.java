@@ -1,8 +1,10 @@
 package osproject;
 
+import javax.swing.*;
 /**
  * Hello world!
- */
+*/
+
 public final class App {
     private App() {
     }
@@ -13,8 +15,12 @@ public final class App {
      * @param args Command-line arguments (unused).
      */
     public static void main(String[] args) {
-        WebCrawler crawler = new WebCrawler();
-        crawler.crawl("https://google.com");
+        SwingUtilities.invokeLater(new Runnable() {
+
+            public void run() {
+                new WebCrawlerGUI();
+            }
+        });
     }
 
 }
