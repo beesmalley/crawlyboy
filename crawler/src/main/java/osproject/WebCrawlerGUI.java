@@ -1,9 +1,13 @@
 package osproject;
 
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.io.FileWriter;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Set;
 import javax.swing.*;
@@ -22,9 +26,29 @@ public class WebCrawlerGUI extends JFrame {
     private Set<String> visitedUrls;
     private JButton startButton;
     private JButton stopButton;
+    private JButton exportButton;
     private JTextField urlTextField;
     private JTextArea outputTextArea;
     private CrawlWorker crawlWorker;
+    private Gson gson;
+    private ArrayList<WebsiteInfo> websiteInfoList = new ArrayList<>();
+
+    /**
+    * Represents the information about a website.
+    */
+    private static class WebsiteInfo {
+        private String title;
+        private String description;
+        private String keywords;
+        private String url;
+
+        WebsiteInfo(String title, String description, String keywords, String url) {
+            this.title = title;
+            this.description = description;
+            this.keywords = keywords;
+            this.url = url;
+        }
+    }
 
     /**
      * Constructs a WebCrawlerGUI object and initializes the GUI components.
@@ -35,6 +59,7 @@ public class WebCrawlerGUI extends JFrame {
 
         startButton = new JButton("Start");
         stopButton = new JButton("Stop");
+        exportButton = new JButton("Export Data");
         urlTextField = new JTextField("http://google.com");
         outputTextArea = new JTextArea();
 
@@ -46,6 +71,7 @@ public class WebCrawlerGUI extends JFrame {
         JPanel buttonPanel = new JPanel();
         buttonPanel.add(startButton);
         buttonPanel.add(stopButton);
+        buttonPanel.add(exportButton);
 
         add(inputPanel, BorderLayout.NORTH);
         add(buttonPanel, BorderLayout.SOUTH);
@@ -73,10 +99,19 @@ public class WebCrawlerGUI extends JFrame {
             }
         });
         stopButton.setEnabled(false);
+        exportButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                exportData();
+            }
+        });
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setSize(WINDOW_WIDTH, WINDOW_HEIGHT);
         setLocationRelativeTo(null);
         setVisible(true);
+
+        gson = new GsonBuilder().setPrettyPrinting().create();
+        websiteInfoList = new ArrayList<>();
     }
     /**
      * Crawls the given URL and extracts information about the page.
@@ -130,6 +165,9 @@ public class WebCrawlerGUI extends JFrame {
                 outputTextArea.append("URL: " + url + "\n\n");
                 outputTextArea.setCaretPosition(outputTextArea.getDocument().getLength());
             });
+
+            WebsiteInfo websiteInfo = new WebsiteInfo(title, description, keywords, url);
+            websiteInfoList.add(websiteInfo);
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -181,6 +219,28 @@ public class WebCrawlerGUI extends JFrame {
         protected void done() {
             startButton.setEnabled(true);
             stopButton.setEnabled(false);
+        }
+    }
+
+    private void exportData() {
+        JFileChooser fileChooser = new JFileChooser();
+        fileChooser.setDialogTitle("Export Data");
+        int userSelection = fileChooser.showSaveDialog(this);
+
+        if (userSelection == JFileChooser.APPROVE_OPTION) {
+            String filePath = fileChooser.getSelectedFile().getPath();
+            String message = "";
+            try (FileWriter writer = new FileWriter(filePath)) {
+                String json = gson.toJson(websiteInfoList);
+                writer.write(json);
+                writer.flush();
+                message = "Data exported successfully!";
+                JOptionPane.showMessageDialog(this, message, "Export Data", JOptionPane.INFORMATION_MESSAGE);
+            } catch (IOException e) {
+                e.printStackTrace();
+                message = "Error exporting data.";
+                JOptionPane.showMessageDialog(this, "Error exporting data!", "Export Data", JOptionPane.ERROR_MESSAGE);
+            }
         }
     }
 }
