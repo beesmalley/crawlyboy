@@ -47,6 +47,9 @@ Feel free to add update notes here. Add the date and your name so we know who's 
     UPDATE: Export button has been added. User is able to choose where to export the file to and it will
     create a JSON with the object data for the WebsiteInfo object.
 
+    Also I tried to fix some of the blank keywords/description problem by extracting information from the
+    title but it didn't seem to make that significant of a difference so more work will need to be done there.
+
     Things left to do:
         - A lot of websites don't use the meta tags for keywords and some websites don't have those 
         meta tags at all, so some of the entries show up blank. Not sure what a good solution 
