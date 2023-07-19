@@ -57,4 +57,6 @@ Feel free to add update notes here. Add the date and your name so we know who's 
         - She is a pretty ugly GUI and I just think we could make her look better
         - She is only executable from the terminal currently. So I'm also trying to add like an 
         executable jar as a application icon so running it is more straight forward
+        - (IDEA) lets impose limits that the user can change so it doesn't just crawl forever until user manually
+        hits stop. this could be by depth or by length of entires.
 
