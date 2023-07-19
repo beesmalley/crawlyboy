@@ -99,6 +99,7 @@ public class WebCrawlerGUI extends JFrame {
             }
         });
         stopButton.setEnabled(false);
+
         exportButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
