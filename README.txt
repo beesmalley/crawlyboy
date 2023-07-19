@@ -37,3 +37,21 @@ Feel free to add update notes here. Add the date and your name so we know who's 
 
     I suggest creating a new branch or using the "prototype" branch to make changes and test them and then later 
     merging to main. 
+
+7/19/23 BEETHOVEN  
+
+    hoping to make an export button today so instead of just seeing the web data printed onto the gui, 
+    we can export that information into a JSON. Also! Since we are using javax.swing, i can confirm the
+    application is indeed multithreaded. woohoo! 
+
+    UPDATE: Export button has been added. User is able to choose where to export the file to and it will
+    create a JSON with the object data for the WebsiteInfo object.
+
+    Things left to do:
+        - A lot of websites don't use the meta tags for keywords and some websites don't have those 
+        meta tags at all, so some of the entries show up blank. Not sure what a good solution 
+        is for this yet but I'm sure there is one
+        - She is a pretty ugly GUI and I just think we could make her look better
+        - She is only executable from the terminal currently. So I'm also trying to add like an 
+        executable jar as a application icon so running it is more straight forward
+
