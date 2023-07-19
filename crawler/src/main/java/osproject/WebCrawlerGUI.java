@@ -158,10 +158,28 @@ public class WebCrawlerGUI extends JFrame {
             String description = document.select("meta[name=description]").attr("content");
             String keywords = document.select("meta[name=keywords]").attr("content");
 
+            // Check if keywords and description are blank
+            if (keywords.isEmpty() && description.isEmpty()) {
+                // Extract information from the title tag
+                String[] titleParts = title.split(" - ");
+                if (titleParts.length > 1) {
+                    final String extractedKeywords = titleParts[0].trim();
+                    keywords = extractedKeywords;
+                    final String extractedDescription = titleParts[1].trim();
+                    description = extractedDescription;
+                } else {
+                    final String extractedDescription = title.trim();
+                    description = extractedDescription;
+                }
+            }
+
+            final String finalKeywords = keywords; // Declare a final variable for the lambda expression
+            final String finalDescription = description; // Declare a final variable for the lambda expression
+
             SwingUtilities.invokeLater(() -> {
                 outputTextArea.append("Title: " + title + "\n");
-                outputTextArea.append("Description: " + description + "\n");
-                outputTextArea.append("Keywords: " + keywords + "\n");
+                outputTextArea.append("Description: " + finalDescription + "\n");
+                outputTextArea.append("Keywords: " + finalKeywords + "\n");
                 outputTextArea.append("URL: " + url + "\n\n");
                 outputTextArea.setCaretPosition(outputTextArea.getDocument().getLength());
             });
