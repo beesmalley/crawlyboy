@@ -31,6 +31,10 @@ public class WebCrawlerGUI extends JFrame {
     private JTextArea outputTextArea;
     private CrawlWorker crawlWorker;
     private Gson gson;
+    private JTextField depthTextField;
+    private JLabel depthLabel;
+    private int currentDepth;
+    private JLabel statusLabel;
     private ArrayList<WebsiteInfo> websiteInfoList = new ArrayList<>();
 
     /**
@@ -57,16 +61,45 @@ public class WebCrawlerGUI extends JFrame {
         super("Web Crawler");
         setLayout(new BorderLayout());
 
+        depthTextField = new JTextField("1"); // Default depth value of 1
+        depthLabel = new JLabel("Depth:");
+
         startButton = new JButton("Start");
         stopButton = new JButton("Stop");
         exportButton = new JButton("Export Data");
         urlTextField = new JTextField("http://google.com");
         outputTextArea = new JTextArea();
+        statusLabel = new JLabel("<html>Status: <font color='red'><b>Not Crawling</b></font></html>");
 
-        JPanel inputPanel = new JPanel();
-        inputPanel.setLayout(new BorderLayout());
-        inputPanel.add(new JLabel("Root URL: "), BorderLayout.WEST);
-        inputPanel.add(urlTextField, BorderLayout.CENTER);
+
+        JPanel inputPanel = new JPanel(new GridBagLayout());
+        GridBagConstraints gbc = new GridBagConstraints();
+        gbc.fill = GridBagConstraints.HORIZONTAL;
+        final int dimensions = 5;
+        gbc.insets = new Insets(dimensions, dimensions, dimensions, dimensions);
+        gbc.gridx = 0;
+        gbc.gridy = 0;
+        inputPanel.add(new JLabel("Root URL:"), gbc);
+        gbc.gridx = 1;
+        gbc.gridy = 0;
+        gbc.gridwidth = 2;
+        gbc.weightx = 1.0;
+        inputPanel.add(urlTextField, gbc);
+        gbc.gridx = 0;
+        gbc.gridy = 1;
+        gbc.gridwidth = 1;
+        gbc.weightx = 0.0;
+        inputPanel.add(depthLabel, gbc);
+        gbc.gridx = 1;
+        gbc.gridy = 1;
+        gbc.gridwidth = 1;
+        gbc.weightx = 0.0;
+        inputPanel.add(depthTextField, gbc);
+        gbc.gridx = 0;
+        gbc.gridy = 2;
+        gbc.gridwidth = 2;
+        gbc.weightx = 1.0;
+        inputPanel.add(statusLabel, gbc);
 
         JPanel buttonPanel = new JPanel();
         buttonPanel.add(startButton);
@@ -77,6 +110,8 @@ public class WebCrawlerGUI extends JFrame {
         add(buttonPanel, BorderLayout.SOUTH);
         add(new JScrollPane(outputTextArea), BorderLayout.CENTER);
 
+        depthTextField.addActionListener(new DepthInputListener());
+
         startButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
@@ -86,6 +121,7 @@ public class WebCrawlerGUI extends JFrame {
                 String rootUrl = urlTextField.getText().trim();
                 crawlWorker = new CrawlWorker(rootUrl);
                 crawlWorker.execute();
+                statusLabel.setText("<html>Status: <font color='green'><b>Crawling</b></font></html>");
             }
 
         });
@@ -121,7 +157,7 @@ public class WebCrawlerGUI extends JFrame {
      */
 
     @SuppressWarnings("checkstyle:methodlength")
-    private void crawl(String url) {
+    private void crawl(String url, int depth) {
         if (visitedUrls == null) {
             visitedUrls = new HashSet<>();
         }
@@ -138,11 +174,16 @@ public class WebCrawlerGUI extends JFrame {
             return;
         }
 
+        if (depth <= 0 || visitedUrls.size() >= MAX_PAGES || crawlWorker.isCancelled()) {
+            stopButton.setEnabled(false);
+            return;
+        }
+
         Elements links = getLinks(url);
         for (Element link : links) {
             String nextUrl = getAbsoluteUrl(link);
             if (!nextUrl.isEmpty() && !crawlWorker.isCancelled()) {
-                crawl(nextUrl);
+                crawl(nextUrl, depth - 1);
             }
         }
     }
@@ -226,11 +267,12 @@ public class WebCrawlerGUI extends JFrame {
 
         CrawlWorker(String rootUrl) {
             this.rootUrl = rootUrl;
+            currentDepth = Integer.parseInt(depthTextField.getText()); // Set the initial depth value
         }
 
         @Override
         protected Void doInBackground() {
-            crawl(rootUrl);
+            crawl(rootUrl, currentDepth); // Pass the depth value to the crawling process
             return null;
         }
 
@@ -238,6 +280,7 @@ public class WebCrawlerGUI extends JFrame {
         protected void done() {
             startButton.setEnabled(true);
             stopButton.setEnabled(false);
+            statusLabel.setText("<html>Status: <font color='red'><b>Not Crawling</b></font></html>");
         }
     }
 
@@ -259,6 +302,19 @@ public class WebCrawlerGUI extends JFrame {
                 e.printStackTrace();
                 message = "Error exporting data.";
                 JOptionPane.showMessageDialog(this, "Error exporting data!", "Export Data", JOptionPane.ERROR_MESSAGE);
+            }
+        }
+    }
+
+    private class DepthInputListener implements ActionListener {
+        @Override
+        public void actionPerformed(ActionEvent e) {
+            try {
+                currentDepth = Integer.parseInt(depthTextField.getText());
+            } catch (NumberFormatException ex) {
+                // Handle the case where the user entered a non-integer value
+                currentDepth = 1; // Set a default depth value
+                depthTextField.setText("1");
             }
         }
     }
