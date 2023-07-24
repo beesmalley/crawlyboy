@@ -60,3 +60,21 @@ Feel free to add update notes here. Add the date and your name so we know who's 
         - (IDEA) lets impose limits that the user can change so it doesn't just crawl forever until user manually
         hits stop. this could be by depth or by length of entires.
 
+7/24/23 BEETHOVEN
+
+    looking to add the depth limit today. and maybe introduce new threads to explore the links.
+
+    UPDATE: added a depth limit text field so it will only go x levels deep (determined by the user)
+
+    Also, added a status indicator so the user can see when it is actively crawling and when it is not.
+
+    Things left to do:
+            - A lot of websites don't use the meta tags for keywords and some websites don't have those 
+            meta tags at all, so some of the entries show up blank. Not sure what a good solution 
+            is for this yet but I'm sure there is one (but honestly the further we get in this project
+            the more i realize there could be some real nuance to what info is categorized as important enough
+            to list in the keywords/desc so it may be wise to stick to what our other goals are first.)
+            - She is a pretty ugly GUI and I just think we could make her look better
+            - She is only executable from the terminal currently. So I'm also trying to add like an 
+            executable jar as a application icon so running it is more straight forward
+    
