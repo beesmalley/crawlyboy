@@ -17,6 +17,7 @@ import java.util.HashSet;
 import java.util.Set;
 import javax.swing.*;
 import javax.swing.border.LineBorder;
+import org.jsoup.HttpStatusException;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
@@ -256,6 +257,11 @@ public class WebCrawlerGUI extends JFrame {
 
             WebsiteInfo websiteInfo = new WebsiteInfo(title, description, keywords, url);
             websiteInfoList.add(websiteInfo);
+        } catch (HttpStatusException e) {
+            // Handle the HttpStatusException
+            int statusCode = e.getStatusCode();
+            System.out.println("HTTP error fetching URL: " + url + ". Status=" + statusCode);
+            // You can add further actions here, like logging or handling specific status codes
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -267,10 +273,42 @@ public class WebCrawlerGUI extends JFrame {
      * @param url The URL of the page.
      * @return The links found on the page.
      */
+    @SuppressWarnings({"checkstyle:LineLength", "checkstyle:MagicNumber"})
     private Elements getLinks(String url) {
         try {
-            Document document = Jsoup.connect(url).get();
-            return document.select("a[href]");
+            int maxRedirects = 5; // Set the maximum number of redirects allowed
+            int redirectCount = 0; // Counter to keep track of redirects
+            String currentUrl = url;
+
+            while (true) {
+                URL urlObj = new URL(currentUrl);
+                HttpURLConnection.setFollowRedirects(false); // Disable automatic redirects
+                HttpURLConnection connection = (HttpURLConnection) urlObj.openConnection();
+                connection.setRequestMethod("HEAD"); // Send a HEAD request to check the headers
+
+                int responseCode = connection.getResponseCode();
+                if (responseCode == HttpURLConnection.HTTP_MOVED_TEMP || responseCode == HttpURLConnection.HTTP_MOVED_PERM) {
+                    // The URL is a redirect, get the new URL from the "Location" header
+                    String newUrl = connection.getHeaderField("Location");
+                    if (newUrl == null) {
+                        break; // No new URL, exit the loop
+                    }
+
+                    // Update the URL and continue checking for redirects
+                    currentUrl = newUrl;
+                    redirectCount++;
+
+                    if (redirectCount > maxRedirects) {
+                        // Too many redirects, skip processing this URL
+                        System.out.println("Too many redirects for URL: " + url);
+                        return new Elements();
+                    }
+                } else {
+                    // If not a redirect, fetch and parse the links
+                    Document document = Jsoup.connect(currentUrl).get();
+                    return document.select("a[href]");
+                }
+            }
         } catch (IOException e) {
             e.printStackTrace();
         }
