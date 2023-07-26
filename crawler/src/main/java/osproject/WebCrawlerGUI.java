@@ -14,7 +14,13 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 import javax.swing.*;
 import javax.swing.border.LineBorder;
 import org.jsoup.Jsoup;
@@ -290,25 +296,50 @@ public class WebCrawlerGUI extends JFrame {
     /**
      * SwingWorker class to perform the web crawling process in the background.
      */
-    @SuppressWarnings("checkstyle:NestedIfDepth")
+    @SuppressWarnings({"checkstyle:NestedIfDepth", "checkstyle:MagicNumber"})
     private class CrawlWorker extends SwingWorker<Void, Void> {
         private String rootUrl;
         private boolean isPaused;
+        private int currentDepth;
         private Object pauseLock = new Object(); // New pause lock object
 
         CrawlWorker(String rootUrl) {
             this.rootUrl = rootUrl;
-            currentDepth = Integer.parseInt(depthTextField.getText()); // Set the initial depth value
+            this.currentDepth = Integer.parseInt(depthTextField.getText()); // Set the initial depth value
+            this.isPaused = false;
+        }
+
+        CrawlWorker(String rootUrl, int currentDepth) {
+            this.rootUrl = rootUrl;
+            this.currentDepth = currentDepth; // Set the initial depth value
             this.isPaused = false;
         }
 
         @Override
         protected Void doInBackground() {
-            crawl(rootUrl, currentDepth); // Start the crawling process
+            ExecutorService executorService = Executors.newFixedThreadPool(5); // Use 5 threads for concurrent crawling
+            crawl(rootUrl, currentDepth, executorService);
+            executorService.shutdown();
             return null;
         }
 
-        private void crawl(String url, int maxDepth) {
+        void onPaused() {
+            SwingUtilities.invokeLater(() -> {
+                pauseButton.setEnabled(false);
+                resumeButton.setEnabled(true);
+                statusLabel.setText("<html>Status: <font color='orange'><b>Paused</b></font></html>");
+            });
+        }
+
+        void onResumed() {
+            SwingUtilities.invokeLater(() -> {
+                pauseButton.setEnabled(true);
+                resumeButton.setEnabled(false);
+                statusLabel.setText("<html>Status: <font color='green'><b>Crawling</b></font></html>");
+            });
+        }
+
+        private void crawl(String url, int maxDepth, ExecutorService executorService) {
             if (isCancelled()) {
                 return;
             }
@@ -331,14 +362,39 @@ public class WebCrawlerGUI extends JFrame {
 
             if (maxDepth > 0) {
                 Elements links = getLinks(url);
+                List<Callable<Void>> tasks = new ArrayList<>();
                 for (Element link : links) {
-                    String nextUrl = getAbsoluteUrl(link);
-                    if (!nextUrl.isEmpty()) {
-                        if (!visitedUrls.contains(nextUrl) && !isCancelled()) {
-                            visitedUrls.add(nextUrl);
-                            crawl(nextUrl, maxDepth - 1); // Recursive call to crawl the next URL
+                    // Check if the crawl is paused
+                    if (isPaused) {
+                        onPaused();
+                        synchronized (pauseLock) {
+                            while (isPaused && !isCancelled()) {
+                                try {
+                                    pauseLock.wait(); // Wait until the worker is resumed
+                                } catch (InterruptedException e) {
+                                    e.printStackTrace();
+                                }
+                            }
                         }
+                        onResumed();
                     }
+                    String nextUrl = getAbsoluteUrl(link);
+                    if (!nextUrl.isEmpty() && !visitedUrls.contains(nextUrl) && !isCancelled()) {
+                        visitedUrls.add(nextUrl);
+                        tasks.add(() -> {
+                            CrawlWorker nextDepthCrawler = new CrawlWorker(nextUrl, maxDepth - 1);
+                            nextDepthCrawler.crawl();
+                            return null;
+                        });
+                    }
+                }
+                try {
+                    List<Future<Void>> futures = executorService.invokeAll(tasks);
+                    for (Future<Void> future : futures) {
+                        future.get();
+                    }
+                } catch (InterruptedException | ExecutionException e) {
+                    e.printStackTrace();
                 }
             }
 
@@ -359,6 +415,12 @@ public class WebCrawlerGUI extends JFrame {
                 String htmlStatus = "<html>Status: <font color='green'><b>Crawling</b></font></html>";
                 statusLabel.setText(htmlStatus);
             }
+        }
+
+        private void crawl() {
+            ExecutorService executorService = Executors.newFixedThreadPool(5); // Use 5 threads for concurrent crawling
+            crawl(rootUrl, currentDepth, executorService);
+            executorService.shutdown();
         }
 
         private boolean isJavaScriptPage(String url) {
