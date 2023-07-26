@@ -5,8 +5,13 @@ import com.google.gson.GsonBuilder;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.io.BufferedReader;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.io.InputStreamReader;
+import java.net.HttpURLConnection;
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Set;
@@ -92,7 +97,8 @@ public class WebCrawlerGUI extends JFrame {
         gbc.insets = new Insets(dimensions, dimensions, dimensions, dimensions);
         gbc.gridx = 0;
         gbc.gridy = 0;
-        inputPanel.add(new JLabel("Root URL:"), gbc);
+        JLabel rootUrl = new JLabel("Root URL:");
+        inputPanel.add(rootUrl, gbc);
         gbc.gridx = 1;
         gbc.gridy = 0;
         gbc.gridwidth = 2;
@@ -126,6 +132,8 @@ public class WebCrawlerGUI extends JFrame {
         add(new JScrollPane(outputTextArea), BorderLayout.CENTER);
 
         //Customization center (keeping everything right here so its easy to change):
+        depthLabel.setForeground(Color.WHITE);
+        rootUrl.setForeground(Color.WHITE);
         String mainColor = "#017058";
         buttonPanel.setBackground(Color.decode(mainColor)); //bottom panel with the buttons
         inputPanel.setBackground(Color.decode(mainColor));  //top panel with the text fields
@@ -309,6 +317,11 @@ public class WebCrawlerGUI extends JFrame {
                 return; // Skip JavaScript pages and login pages
             }
 
+            // Fetch and parse robots.txt file
+            if (!isAllowedByRobotsTxt(url)) {
+                return;
+            }
+
             processPage(url);
 
             if (visitedUrls.size() >= MAX_PAGES || isCancelled()) {
@@ -357,6 +370,43 @@ public class WebCrawlerGUI extends JFrame {
             // Add checks to detect login pages
             // If the URL points to a login page, return true, else return false.
             return url.contains("login") || url.contains("signin");
+        }
+
+        private boolean isAllowedByRobotsTxt(String url) {
+            try {
+                URL robotsUrl = new URL(url + "/robots.txt");
+                HttpURLConnection connection = (HttpURLConnection) robotsUrl.openConnection();
+                connection.setRequestMethod("GET");
+
+                int responseCode = connection.getResponseCode();
+                if (responseCode == HttpURLConnection.HTTP_OK) {
+                    BufferedReader reader = new BufferedReader(new InputStreamReader(connection.getInputStream()));
+                    String line;
+                    while ((line = reader.readLine()) != null) {
+                        // Check if the robots.txt file contains rules for the user-agent
+                        if (line.startsWith("User-agent: *")) {
+                            while ((line = reader.readLine()) != null) {
+                                // Check if the user-agent is allowed to access the URL
+                                if (line.startsWith("Disallow: ")) {
+                                    String disallowedPath = line.substring("Disallow: ".length());
+                                    if (url.contains(disallowedPath)) {
+                                        return false; // URL is disallowed by robots.txt
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    reader.close();
+                }
+            } catch (MalformedURLException e) {
+                e.printStackTrace();
+                // Handle MalformedURLException
+            } catch (IOException e) {
+                e.printStackTrace();
+                // Handle IOException
+            }
+
+            return true; // If no robots.txt is found or no disallow rules match, assume URL is allowed
         }
 
         void pause() {
