@@ -37,7 +37,6 @@ public class WebCrawlerGUI extends JFrame {
     private JLabel statusLabel;
     private JButton pauseButton;
     private JButton resumeButton;
-    private Object pauseLock = new Object();
     private ArrayList<WebsiteInfo> websiteInfoList = new ArrayList<>();
 
     /**
@@ -189,61 +188,6 @@ public class WebCrawlerGUI extends JFrame {
         gson = new GsonBuilder().setPrettyPrinting().create();
         websiteInfoList = new ArrayList<>();
     }
-    // /**
-    //  * Crawls the given URL and extracts information about the page.
-    //  *
-    //  * @param url The URL to crawl.
-    //  */
-
-    @SuppressWarnings("checkstyle:methodlength")
-    // private void crawl(String rootUrl, int maxDepth) {
-    //     // Use a stack to perform iterative crawling
-    //     ArrayList<CrawlingPage> stack = new ArrayList<>();
-    //     stack.add(new CrawlingPage(rootUrl, 0));
-
-    //     while (!stack.isEmpty() && !crawlWorker.isCancelled()) {
-    //         CrawlingPage page = stack.remove(stack.size() - 1);
-    //         if (page.depth <= maxDepth && !visitedUrls.contains(page.url)) {
-    //             visitedUrls.add(page.url);
-    //             processPage(page.url);
-
-    //             if (visitedUrls.size() >= MAX_PAGES || crawlWorker.isCancelled()) {
-    //                 stopButton.setEnabled(false);
-    //                 return;
-    //             }
-
-    //             Elements links = getLinks(page.url);
-    //             for (Element link : links) {
-    //                 String nextUrl = getAbsoluteUrl(link);
-    //                 if (!nextUrl.isEmpty() && !crawlWorker.isCancelled()) {
-    //                     stack.add(new CrawlingPage(nextUrl, page.depth + 1));
-    //                 }
-    //             }
-
-    //             // Check if the crawl is paused
-    //             synchronized (pauseLock) {
-    //                 while (crawlWorker.isPaused() && !crawlWorker.isCancelled()) {
-    //                     statusLabel.setText("<html>Status: <font color='orange'><b>Paused</b></font></html>");
-    //                     try {
-    //                         pauseLock.wait(); // Wait until the worker is resumed
-    //                     } catch (InterruptedException e) {
-    //                         e.printStackTrace();
-    //                     }
-    //                 }
-    //             }
-    //         }
-    //     }
-    // }
-
-    private static class CrawlingPage {
-        private String url;
-        private int depth;
-
-        CrawlingPage(String url, int depth) {
-            this.url = url;
-            this.depth = depth;
-        }
-    }
     /**
      * Processes the page at the given URL and extracts information.
      *
@@ -390,10 +334,6 @@ public class WebCrawlerGUI extends JFrame {
             synchronized (pauseLock) {
                 pauseLock.notifyAll(); // Notify the worker thread to resume
             }
-        }
-
-        boolean isPaused() {
-            return isPaused;
         }
 
         @Override
