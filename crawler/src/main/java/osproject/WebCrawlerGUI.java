@@ -92,7 +92,8 @@ public class WebCrawlerGUI extends JFrame {
         gbc.insets = new Insets(dimensions, dimensions, dimensions, dimensions);
         gbc.gridx = 0;
         gbc.gridy = 0;
-        inputPanel.add(new JLabel("Root URL:"), gbc);
+        JLabel rootUrl = new JLabel("Root URL:");
+        inputPanel.add(rootUrl, gbc);
         gbc.gridx = 1;
         gbc.gridy = 0;
         gbc.gridwidth = 2;
@@ -126,6 +127,8 @@ public class WebCrawlerGUI extends JFrame {
         add(new JScrollPane(outputTextArea), BorderLayout.CENTER);
 
         //Customization center (keeping everything right here so its easy to change):
+        depthLabel.setForeground(Color.WHITE);
+        rootUrl.setForeground(Color.WHITE);
         String mainColor = "#017058";
         buttonPanel.setBackground(Color.decode(mainColor)); //bottom panel with the buttons
         inputPanel.setBackground(Color.decode(mainColor));  //top panel with the text fields
