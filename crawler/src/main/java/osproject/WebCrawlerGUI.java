@@ -11,6 +11,7 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Set;
 import javax.swing.*;
+import javax.swing.border.LineBorder;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
@@ -59,11 +60,13 @@ public class WebCrawlerGUI extends JFrame {
     /**
      * Constructs a WebCrawlerGUI object and initializes the GUI components.
     */
+    @SuppressWarnings("checkstyle:MagicNumber")
     public WebCrawlerGUI() {
         super("Web Crawler");
         setLayout(new BorderLayout());
 
         depthTextField = new JTextField("1"); // Default depth value of 1
+        depthTextField.setBackground(Color.decode("#CCCCCC")); // Set the background color to gray
         depthLabel = new JLabel("Depth:");
         // Initialize the visitedUrls set here
         visitedUrls = new HashSet<>();
@@ -71,15 +74,18 @@ public class WebCrawlerGUI extends JFrame {
         stopButton = new JButton("Stop");
         exportButton = new JButton("Export Data");
         urlTextField = new JTextField("http://google.com");
+        urlTextField.setBackground(Color.decode("#CCCCCC")); // Set the background color to gray
         outputTextArea = new JTextArea();
         pauseButton = new JButton("Pause");
         resumeButton = new JButton("Resume");
         pauseButton.setEnabled(false);
         resumeButton.setEnabled(false);
         statusLabel = new JLabel("<html>Status: <font color='red'><b>Not Crawling</b></font></html>");
-
+        statusLabel.setBackground(Color.decode("#CCCCCC")); // Set the background color to gray
+        statusLabel.setOpaque(true); // Set the label to be opaque to show the background color
 
         JPanel inputPanel = new JPanel(new GridBagLayout());
+
         GridBagConstraints gbc = new GridBagConstraints();
         gbc.fill = GridBagConstraints.HORIZONTAL;
         final int dimensions = 5;
@@ -118,6 +124,14 @@ public class WebCrawlerGUI extends JFrame {
         add(inputPanel, BorderLayout.NORTH);
         add(buttonPanel, BorderLayout.SOUTH);
         add(new JScrollPane(outputTextArea), BorderLayout.CENTER);
+
+        //Customization center (keeping everything right here so its easy to change):
+        String mainColor = "#017058";
+        buttonPanel.setBackground(Color.decode(mainColor)); //bottom panel with the buttons
+        inputPanel.setBackground(Color.decode(mainColor));  //top panel with the text fields
+        outputTextArea.setBackground(Color.decode("#69A297"));  //window where all the entries are printed
+        LineBorder colorfulBorder = new LineBorder(Color.decode("#69A297"), 6);  //border around window
+        getRootPane().setBorder(colorfulBorder);
 
         depthTextField.addActionListener(new DepthInputListener());
 
@@ -197,24 +211,29 @@ public class WebCrawlerGUI extends JFrame {
     private void processPage(String url) {
         try {
             Document document = Jsoup.connect(url).get();
-            String title = document.title();
+            String originalTitle = document.title().trim();
             String description = document.select("meta[name=description]").attr("content");
             String keywords = document.select("meta[name=keywords]").attr("content");
 
             // Check if keywords and description are blank
             if (keywords.isEmpty() && description.isEmpty()) {
                 // Extract information from the title tag
-                String[] titleParts = title.split(" - ");
+                String[] titleParts = originalTitle.split(" - ");
                 if (titleParts.length > 1) {
                     final String extractedKeywords = titleParts[0].trim();
                     keywords = extractedKeywords;
                     final String extractedDescription = titleParts[1].trim();
                     description = extractedDescription;
                 } else {
-                    final String extractedDescription = title.trim();
+                    final String extractedDescription = originalTitle.trim();
                     description = extractedDescription;
                 }
             }
+
+            // Replace empty values with "N/A"
+            final String title = originalTitle.isEmpty() ? "N/A" : originalTitle;
+            description = description.isEmpty() ? "N/A" : description;
+            keywords = keywords.isEmpty() ? "N/A" : keywords;
 
             final String finalKeywords = keywords; // Declare a final variable for the lambda expression
             final String finalDescription = description; // Declare a final variable for the lambda expression
@@ -286,6 +305,10 @@ public class WebCrawlerGUI extends JFrame {
                 return;
             }
 
+            if (isJavaScriptPage(url) || isLoginPage(url)) {
+                return; // Skip JavaScript pages and login pages
+            }
+
             processPage(url);
 
             if (visitedUrls.size() >= MAX_PAGES || isCancelled()) {
@@ -323,6 +346,17 @@ public class WebCrawlerGUI extends JFrame {
                 String htmlStatus = "<html>Status: <font color='green'><b>Crawling</b></font></html>";
                 statusLabel.setText(htmlStatus);
             }
+        }
+
+        private boolean isJavaScriptPage(String url) {
+            // Add checks to detect JavaScript pages
+            return url.contains(".js");
+        }
+
+        private boolean isLoginPage(String url) {
+            // Add checks to detect login pages
+            // If the URL points to a login page, return true, else return false.
+            return url.contains("login") || url.contains("signin");
         }
 
         void pause() {
