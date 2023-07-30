@@ -1,5 +1,5 @@
-To run this project from the terminal, make sure you have Apache Maven and JSoup installed. (The JSoup libraries
-help us a lot with the actual web interaction.) In the terminal, navigate to the crawler folder and then run the
+To run this project from the terminal, make sure you have Apache Maven version 3.9.3 installed. In the terminal, 
+navigate to the crawler folder and then run the
 commands:
 
 mvn clean
